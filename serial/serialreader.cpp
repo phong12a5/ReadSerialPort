@@ -34,6 +34,8 @@ QStringList SerialReader::getListAvailPorts() const
 
 void SerialReader::startReadPort(QString portName, int baudRate)
 {
+    if(portName.isEmpty()) return;
+
     LOGD(TAG) << "portName:" << portName << ", baudRate:" <<  baudRate;
     PortReader* reader = getExistedReader(portName);
     if (!reader) {

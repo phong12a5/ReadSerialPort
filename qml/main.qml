@@ -8,28 +8,14 @@ Window {
     visible: true
     title: qsTr("SerialPort Reader")
 
-    ListView {
-        id: dataList
+    Text {
         width: parent.width
-        model: APP_MODEL.serialData
-        anchors {
-            top: parent.top
-            topMargin: 10
-            bottom: ctrl.top
-            bottomMargin: 10
-        }
-        delegate: Item {
-            width: dataList.width
-            height: 20
-            Text {
-                anchors.fill: parent
-                text: modelData
-                padding: 2
-            }
-        }
-        onModelChanged: {
-            positionViewAtEnd()
-        }
+        anchors.bottom: ctrl.top
+        anchors.top: parent.top
+        verticalAlignment: Text.AlignVCenter
+        horizontalAlignment: Text.AlignHCenter
+        text: APP_MODEL.serialData
+        padding: 2
     }
 
     Row {

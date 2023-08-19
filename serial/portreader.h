@@ -5,8 +5,9 @@
 #include <QThread>
 #include <QTimer>
 #include <QSerialPort>
+#include <QMutex>
 
-#define READ_DATA_PERIOD 1 //ms
+#define READ_DATA_PERIOD 1000000 //unit: ns ~ 1 ms
 
 class PortReader : public QObject
 {
@@ -25,14 +26,15 @@ signals:
 
 public slots:
     void onStarted();
-    void onReadData();
+    bool onReadData();
 
 private:
+    bool mIsRunning;
     QString mPort;
     int mBaudRate;
     QThread* mThread;
-    QTimer* mReadTimer;
     QSerialPort mSerial;
+    QMutex mRunningLock;
 };
 
 #endif // PORTREADER_H

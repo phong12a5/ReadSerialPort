@@ -1,42 +1,32 @@
 #include "portreader.h"
 #include <log.h>
 #include <QSerialPortInfo>
+#include<windows.h>
+#include <timeapi.h>
+#include <chrono>
+#include <thread>
+#include <QElapsedTimer>
+#include <inttypes.h>
 
-#include <stdio.h>
-#include <fcntl.h>   /* File Control Definitions           */
-#include <termios.h> /* POSIX Terminal Control Definitions */
-#include <unistd.h>  /* UNIX Standard Definitions      */
-#include <errno.h>   /* ERROR Number Definitions           */
 
 static constexpr const char* const TAG = "PortReader";
 
 PortReader::PortReader(QString port, int baudRate)
     : mPort(port),
-      mBaudRate(baudRate),
-      mThread(nullptr),
-      mReadTimer(nullptr)
+    mBaudRate(baudRate),
+    mThread(nullptr)
 {
     LOGD(TAG) << "port:" << port << ", baudRate:" << baudRate;
-//    mSerial.setPortName(port);
-//    mSerial.setBaudRate(baudRate);
-//    mSerial.setDataBits(QSerialPort::Data7);
-//    mSerial.setParity(QSerialPort::EvenParity);
-//    mSerial.setFlowControl(QSerialPort::HardwareControl);
-//    mSerial.setStopBits(QSerialPort::OneStop);
+    mSerial.setPortName(port);
+    mSerial.setBaudRate(baudRate);
+    mSerial.setDataBits(QSerialPort::Data7);
+    mSerial.setParity(QSerialPort::EvenParity);
+    mSerial.setFlowControl(QSerialPort::HardwareControl);
+    mSerial.setStopBits(QSerialPort::OneStop);
 
 
-//    mSerial.open(QIODevice::ReadOnly);
-//    if (mSerial.isOpen())  mSerial.clear(QSerialPort::Input);
-
-//    QObject::connect(&mSerial, &QSerialPort::readyRead, [&]
-//                     {
-//                         //this is called when readyRead() is emitted
-//                         LOGD(TAG) << "New data available: " << mSerial.bytesAvailable();
-////                         QByteArray datas = mSerial.readAll();
-////                         mSerial.clear(QSerialPort::Input);
-////                         LOGD(TAG) << QString(datas);
-//                     });
-}
+    mSerial.open(QIODevice::ReadOnly);
+    if (mSerial.isOpen())  mSerial.clear(QSerialPort::AllDirections);}
 
 PortReader::~PortReader()
 {
@@ -45,7 +35,7 @@ PortReader::~PortReader()
 
 void PortReader::start()
 {
-    LOGD(TAG);
+    LOGD(TAG) << mPort;
     if (!mThread) {
         mThread = new QThread(this);
         connect(mThread, &QThread::started, this, &PortReader::onStarted);
@@ -59,11 +49,11 @@ void PortReader::start()
 
 void PortReader::stop()
 {
-    LOGD(TAG);
+    LOGD(TAG) << mPort;
     if (mThread) {
-        if (mReadTimer && mReadTimer->isActive()) {
-            mReadTimer->setSingleShot(true);
-        }
+        mRunningLock.lock();
+        mIsRunning = false;
+        mRunningLock.unlock();
         mThread->quit();
     }
 }
@@ -78,112 +68,78 @@ void PortReader::setBaudRate(int baudRate)
     mBaudRate = baudRate;
 }
 
-void PortReader::onStarted()
-{
-    LOGD(TAG);
-    if (!mReadTimer) {
-        mReadTimer = new QTimer(this);
-    }
+inline static void SleepInMs(unsigned int ms) {
+    LARGE_INTEGER frequency;        // ticks per second
+    LARGE_INTEGER t1, t2;           // ticks
+    double elapsedTime = 0;
 
-    if (!mReadTimer->isActive()) {
-        connect(mReadTimer, &QTimer::timeout, this, &PortReader::onReadData);
-        mReadTimer->setInterval(READ_DATA_PERIOD);
+    // get ticks per second
+    QueryPerformanceFrequency(&frequency);
+
+    QueryPerformanceCounter(&t1);
+    while(elapsedTime >= ms){
+        QueryPerformanceCounter(&t2);
+        elapsedTime = (t2.QuadPart - t1.QuadPart) * 1000.0 / frequency.QuadPart;
     }
-    mReadTimer->setSingleShot(false);
-    mReadTimer->start();
 }
 
-void PortReader::onReadData()
+void PortReader::onStarted()
 {
-    LOGD(TAG);
-//    if (!mSerial.isOpen()) {
-//        mSerial.open(QIODevice::ReadOnly);
-//        if (mSerial.isOpen())  mSerial.clear(QSerialPort::AllDirections);
-//        else return;
+    mRunningLock.lock();
+    mIsRunning = true;
+    mRunningLock.unlock();
 
-//    }
+    QElapsedTimer elapTime;
 
-//    if (mSerial.baudRate() != mBaudRate) {
-//        LOGD(TAG) << "update baud date";
-//        mSerial.setBaudRate(mBaudRate);
-//        mSerial.clear(QSerialPort::AllDirections);
-//    }
+    while (true) {
+        // start timer
+        //        QueryPerformanceCounter(&t1);
+        mRunningLock.lock();
+        if (!mIsRunning) {
+            mRunningLock.unlock();
+            break;
+        }
+        mRunningLock.unlock();
 
-//    if (!mSerial.isReadable()) {
-//        LOGD(TAG) << "port: " << mPort << "is not ready for reading";
-//        return;
-//    }
+        elapTime.start();
+        onReadData();
+        qint64 benchmark = elapTime.nsecsElapsed();
+        LOGD(TAG) << "Done with benchmark:" << benchmark << "ns";
 
+//        QThread::usleep(1000);
+    }
+}
 
-//    while(true) {
-//        mSerial.waitForReadyRead();
-//        qint64 bytesAvailable = mSerial.bytesAvailable();
-//        if (bytesAvailable > 0) {
-//            char buffer[2];
-//            mSerial.read(buffer, 1);
-//        }
-//    }
+bool PortReader::onReadData()
+{
+    if (!mSerial.isOpen()) {
+        mSerial.open(QIODevice::ReadOnly);
+        if (mSerial.isOpen())  mSerial.clear(QSerialPort::AllDirections);
+        else return false;
+    }
 
-//    if (mSerial.waitForReadyRead()) {
-//        QByteArray datas = mSerial.readAll();
-//        LOGD(TAG) << QString(datas);
-//    }
+    if (mSerial.baudRate() != mBaudRate) {
+        LOGD(TAG) << "update baud date";
+        mSerial.setBaudRate(mBaudRate);
+        mSerial.clear(QSerialPort::AllDirections);
+    }
 
-//    QByteArray datas = mSerial.readAll();
-//    if (!datas.isEmpty()) {
-//        LOGD(TAG) << QString(datas);
-////        emit sigDataReady(mPort, datas);
-//    }
+    if (!mSerial.isReadable()) {
+        LOGD(TAG) << "port: " << mPort << "is not ready for reading";
+        return false;
+    }
 
-    int fd;           //device file id
-    //------------------------------- Opening the Serial Port -------------------------------
-    const char * portNameChr = mPort.toStdString().data();
-    LOGD(TAG) << "mPort: " << mPort;
-    LOGD(TAG) << "portNameChr: " << portNameChr;
-    printf("portNameChr: %s",portNameChr);
-    fd = open(portNameChr,O_RDWR | O_NOCTTY);    // ttyUSB0 is the FT232 based USB2SERIAL Converter
-    if(fd == -1)                        // Error Checking
-        printf("Error while opening the device\n");
-    //---------- Setting the Attributes of the serial port using termios structure ---------
-    struct termios SerialPortSettings;  // Create the structure
-    tcgetattr(fd, &SerialPortSettings); // Get the current attributes of the Serial port
-    // Setting the Baud rate
-    cfsetispeed(&SerialPortSettings,mBaudRate); // Set Read  Speed as 19200
-    cfsetospeed(&SerialPortSettings,mBaudRate); // Set Write Speed as 19200
+    int bufferSize = 100;
+    int numRead = 0;
+    char buffer[bufferSize];
 
-    SerialPortSettings.c_cflag &= ~PARENB;   // Disables the Parity Enable bit(PARENB),So No Parity
-    SerialPortSettings.c_cflag &= ~CSTOPB;   // CSTOPB = 2 Stop bits,here it is cleared so 1 Stop bit
-    SerialPortSettings.c_cflag &= ~CSIZE;    // Clears the mask for setting the data size
-    SerialPortSettings.c_cflag |=  CS8;      // Set the data bits = 8
-    SerialPortSettings.c_cflag &= ~CRTSCTS;       // No Hardware flow Control
-    SerialPortSettings.c_cflag |= CREAD | CLOCAL; // Enable receiver,Ignore Modem Control lines
-    SerialPortSettings.c_iflag &= ~(IXON | IXOFF | IXANY);  // Disable XON/XOFF flow control both i/p and o/p
-    SerialPortSettings.c_iflag &= ~(ICANON | ECHO | ECHOE | ISIG);  // Non Cannonical mode
-    SerialPortSettings.c_oflag &= ~OPOST;//No Output Processing
-    // Setting Time outs
-    SerialPortSettings.c_cc[VMIN] = 10; // Read at least 10 characters
-    SerialPortSettings.c_cc[VTIME] = 0; // Wait indefinetly
-
-    if((tcsetattr(fd,TCSANOW,&SerialPortSettings)) != 0) // Set the attributes to the termios structure
-        printf("Error while setting attributes \n");
-    //------------------------------- Read data from serial port -----------------------------
-
-    char read_buffer[32];   // Buffer to store the data received
-    int  bytes_read = 0;    // Number of bytes read by the read() system call
-    int bytes_written = 0;  // Number of bytes written
-    int i = 0;
-
-//    tcflush(fd, TCIFLUSH);   // Discards old data in the rx buffer
-    //Device intialization
-
-//    char write_buffer[]="READ? \n ";
-//    bytes_written=write(fd,&write_buffer,sizeof(write_buffer));
-
-
-    bytes_read = read(fd,&read_buffer,32); // Read the data
-    LOGD(TAG) << "bytes_read:" << bytes_read;
-
-    for(i=0;i<10;i++)    //printing only the needed characters
-        LOGD(TAG) << read_buffer[i];
-    close(fd); // Close the serial port
+    if(mSerial.waitForReadyRead(1)) {
+        numRead  = mSerial.read(buffer, bufferSize);
+        if (numRead > 0) {
+            LOGD(TAG) << "numRead: " << numRead;
+            emit sigDataReady(mPort, buffer);
+            return true;
+        }
+    }
+    return false;
 }

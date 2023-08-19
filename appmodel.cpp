@@ -48,26 +48,22 @@ void AppModel::setBaudRate(int baudRate)
     }
 }
 
-QStringList AppModel::serialData() const
+QString AppModel::serialData() const
 {
     return mSerialData;
 }
 
-void AppModel::clearSerialData() {
-    mSerialData.clear();
-    emit serialDataChanged();
-}
-
-void AppModel::appendSerialData(QString data)
+void AppModel::setSerialData(QString data)
 {
-    if(mSerialData.size() > 100) mSerialData.takeFirst();
-    mSerialData.append(data);
-    static QTimer* timer = nullptr;
-    if(timer == nullptr) {
-        timer = new QTimer(this);
-        timer->setSingleShot(true);
-        timer->setInterval(100); // 50 fps
-        connect(timer, &QTimer::timeout, this, [this] () { emit serialDataChanged(); });
+    if (mSerialData != data) {
+        mSerialData = data;
+        static QTimer* timer = nullptr;
+        if(timer == nullptr) {
+            timer = new QTimer(this);
+            timer->setSingleShot(true);
+            timer->setInterval(20); // 50 fps
+            connect(timer, &QTimer::timeout, this, [this] () { emit serialDataChanged(); });
+        }
+        if (!timer->isActive()) timer->start();
     }
-    if (!timer->isActive()) timer->start();
 }

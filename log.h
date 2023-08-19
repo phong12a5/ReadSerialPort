@@ -4,11 +4,8 @@
 #include <QDebug>
 #include <QThread>
 #include <QElapsedTimer>
+#include <ostream>
 
-
-
-QElapsedTimer* getElapTime();
-
-#define LOGD(TAG) qDebug() << "[" << getElapTime()->nsecsElapsed() << "][" << TAG << "][" << QThread::currentThreadId() << "][" << __FUNCTION__ << "][" << __LINE__ << "] "
+#define LOGD(TAG) qDebug() << "[" << TAG << "][" << QThread::currentThreadId() << "][" << __FUNCTION__ << "][" << __LINE__ << "] "
 
 #endif // LOG_H
