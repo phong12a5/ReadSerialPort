@@ -22,13 +22,14 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     appcontroller.h \
     appmodel.h \
-    serial/log.h \
+    log.h \
     serial/portreader.h \
     serial/serialreader.h
 
 SOURCES += \
         appcontroller.cpp \
         appmodel.cpp \
+        log.cpp \
         main.cpp \
         serial/portreader.cpp \
         serial/serialreader.cpp

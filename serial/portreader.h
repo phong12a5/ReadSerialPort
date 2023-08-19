@@ -6,27 +6,29 @@
 #include <QTimer>
 #include <QSerialPort>
 
-#define READ_DATA_PERIOD 1000 //ms
+#define READ_DATA_PERIOD 1 //ms
 
 class PortReader : public QObject
 {
     Q_OBJECT
 public:
-    explicit PortReader(QObject *parent, int port, int baudRate);
+    explicit PortReader(QString port, int baudRate);
     ~PortReader();
 
     void start();
     void stop();
+    bool isRunning();
+    void setBaudRate(int);
 
 signals:
-    void sigDataReady(QByteArray);
+    void sigDataReady(QString portName, QByteArray);
 
 public slots:
     void onStarted();
     void onReadData();
 
 private:
-    int mPort;
+    QString mPort;
     int mBaudRate;
     QThread* mThread;
     QTimer* mReadTimer;

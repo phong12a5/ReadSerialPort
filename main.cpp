@@ -3,6 +3,7 @@
 #include <appcontroller.h>
 #include <appmodel.h>
 #include <QQmlContext>
+#include <log.h>
 
 int main(int argc, char *argv[])
 {

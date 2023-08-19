@@ -11,19 +11,19 @@ class AppController : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY(QStringList portList READ portList NOTIFY portListChanged)
-
 public:
     explicit AppController(QObject *parent = nullptr);
 
     void setModel(AppModel* model);
 
-    QStringList portList() const;
-signals:
-    void portListChanged();
+    Q_INVOKABLE void startReadPort(QString portName);
+    Q_INVOKABLE void stopReadPort(QString portName);
 
 private slots:
     void onPortReady();
+    void onCurrentPortChanged(QString,QString);
+    void onBaudRateChanged(int,int);
+    void onDataUpdated(QString portName, QByteArray);
 
 private:
     AppModel* mAppModel;

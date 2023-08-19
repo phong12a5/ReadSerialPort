@@ -1,5 +1,9 @@
 #include "serialreader.h"
 #include <QMutex>
+#include <log.h>
+#include <portreader.h>
+
+static constexpr const char* const TAG = "SerialReader";
 
 static SerialReader* sInstance;
 
@@ -23,9 +27,39 @@ SerialReader *SerialReader::instance()
     return sInstance;
 }
 
-QStringList SerialReader::getListAvailPorts(bool* ok) const
+QStringList SerialReader::getListAvailPorts() const
 {
     return mAvailablePorts;
+}
+
+void SerialReader::startReadPort(QString portName, int baudRate)
+{
+    LOGD(TAG) << "portName:" << portName << ", baudRate:" <<  baudRate;
+    PortReader* reader = getExistedReader(portName);
+    if (!reader) {
+        reader = new PortReader(portName, baudRate);
+        connect(reader, &PortReader::sigDataReady, this, &SerialReader::sigDataUpdated);
+        mReaderList.insert(portName, reader);
+    }
+    if (reader->isRunning()) {
+        reader->setBaudRate(baudRate);
+    } else {
+        reader->start();
+    }
+}
+
+void SerialReader::stopReadPort(QString portName)
+{
+    LOGD(TAG) << "portName:" << portName;
+    PortReader* reader = getExistedReader(portName);
+    if (reader) {
+        reader->stop();
+    }
+}
+
+PortReader *SerialReader::getExistedReader(QString portName) const
+{
+    return mReaderList.value(portName, nullptr);
 }
 
 void SerialReader::onScanPort()
@@ -49,6 +83,6 @@ void SerialReader::onScanPort()
 
     if (changed) {
         mAvailablePorts = list;
-        emit portAvailable();
+        emit sigPortAvailable();
     }
 }
