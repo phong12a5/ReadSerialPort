@@ -2,7 +2,6 @@
 #include <log.h>
 #include <QSerialPortInfo>
 #include<windows.h>
-#include <timeapi.h>
 #include <chrono>
 #include <thread>
 #include <QElapsedTimer>
@@ -23,10 +22,8 @@ PortReader::PortReader(QString port, int baudRate)
     mSerial.setParity(QSerialPort::EvenParity);
     mSerial.setFlowControl(QSerialPort::HardwareControl);
     mSerial.setStopBits(QSerialPort::OneStop);
-
-
     mSerial.open(QIODevice::ReadOnly);
-    if (mSerial.isOpen())  mSerial.clear(QSerialPort::AllDirections);}
+    if (mSerial.isOpen())  mSerial.clear(QSerialPort::Input);}
 
 PortReader::~PortReader()
 {
@@ -68,32 +65,16 @@ void PortReader::setBaudRate(int baudRate)
     mBaudRate = baudRate;
 }
 
-inline static void SleepInMs(unsigned int ms) {
-    LARGE_INTEGER frequency;        // ticks per second
-    LARGE_INTEGER t1, t2;           // ticks
-    double elapsedTime = 0;
-
-    // get ticks per second
-    QueryPerformanceFrequency(&frequency);
-
-    QueryPerformanceCounter(&t1);
-    while(elapsedTime >= ms){
-        QueryPerformanceCounter(&t2);
-        elapsedTime = (t2.QuadPart - t1.QuadPart) * 1000.0 / frequency.QuadPart;
-    }
-}
-
 void PortReader::onStarted()
 {
     mRunningLock.lock();
     mIsRunning = true;
     mRunningLock.unlock();
 
-    QElapsedTimer elapTime;
+    static QElapsedTimer elapTime;
 
     while (true) {
-        // start timer
-        //        QueryPerformanceCounter(&t1);
+        elapTime.restart();
         mRunningLock.lock();
         if (!mIsRunning) {
             mRunningLock.unlock();
@@ -101,12 +82,9 @@ void PortReader::onStarted()
         }
         mRunningLock.unlock();
 
-        elapTime.start();
-        onReadData();
+        bool success = onReadData();
         qint64 benchmark = elapTime.nsecsElapsed();
-        LOGD(TAG) << "Done with benchmark:" << benchmark << "ns";
-
-//        QThread::usleep(1000);
+        LOGD(TAG) << (success? "Done" : "Failure") << " with benchmark:" << benchmark << "ns";
     }
 }
 
@@ -114,8 +92,11 @@ bool PortReader::onReadData()
 {
     if (!mSerial.isOpen()) {
         mSerial.open(QIODevice::ReadOnly);
-        if (mSerial.isOpen())  mSerial.clear(QSerialPort::AllDirections);
-        else return false;
+        if (mSerial.isOpen())  mSerial.clear(QSerialPort::Input);
+        else {
+            LOGD(TAG) << "cannot open device!";
+            return false;
+        }
     }
 
     if (mSerial.baudRate() != mBaudRate) {
@@ -134,12 +115,20 @@ bool PortReader::onReadData()
     char buffer[bufferSize];
 
     if(mSerial.waitForReadyRead(1)) {
+        static QElapsedTimer elapTime;
+        elapTime.restart();
         numRead  = mSerial.read(buffer, bufferSize);
+        bool succes = false;
         if (numRead > 0) {
-            LOGD(TAG) << "numRead: " << numRead;
             emit sigDataReady(mPort, buffer);
-            return true;
+            succes = true;
         }
+        qint64 endTime = elapTime.nsecsElapsed();
+        if (endTime < READ_DATA_PERIOD) {
+            quint64 remaningTime = READ_DATA_PERIOD - endTime;
+            QThread::usleep(remaningTime / 1000);
+        }
+        return succes;
     }
     return false;
 }
