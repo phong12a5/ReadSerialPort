@@ -26,7 +26,7 @@ signals:
 
 public slots:
     void onStarted();
-    bool onReadData();
+    bool onReadData(bool* timeout = nullptr);
 
 private:
     bool mIsRunning;

@@ -75,20 +75,25 @@ void PortReader::onStarted()
 
     while (true) {
         elapTime.restart();
-        mRunningLock.lock();
         if (!mIsRunning) {
-            mRunningLock.unlock();
             break;
         }
-        mRunningLock.unlock();
 
-        bool success = onReadData();
+        bool timeout = false;
+        bool success = onReadData(&timeout);
+        qint64 endTime = elapTime.nsecsElapsed();
+
+        if (!timeout && endTime < READ_DATA_PERIOD) {
+            while(elapTime.nsecsElapsed() < READ_DATA_PERIOD);
+        }
+
         qint64 benchmark = elapTime.nsecsElapsed();
+
         LOGD(TAG) << (success? "Done" : "Failure") << " with benchmark:" << benchmark << "ns";
     }
 }
 
-bool PortReader::onReadData()
+bool PortReader::onReadData(bool* timeout)
 {
     if (!mSerial.isOpen()) {
         mSerial.open(QIODevice::ReadOnly);
@@ -115,20 +120,15 @@ bool PortReader::onReadData()
     char buffer[bufferSize];
 
     if(mSerial.waitForReadyRead(1)) {
-        static QElapsedTimer elapTime;
-        elapTime.restart();
         numRead  = mSerial.read(buffer, bufferSize);
         bool succes = false;
         if (numRead > 0) {
             emit sigDataReady(mPort, buffer);
             succes = true;
         }
-        qint64 endTime = elapTime.nsecsElapsed();
-        if (endTime < READ_DATA_PERIOD) {
-            quint64 remaningTime = READ_DATA_PERIOD - endTime;
-            QThread::usleep(remaningTime / 1000);
-        }
         return succes;
+    } else {
+        if (timeout) *timeout = true;
     }
     return false;
 }

@@ -54,7 +54,6 @@ void AppController::onBaudRateChanged(int oldBaudRate, int newBaudRate)
 
 void AppController::onDataUpdated(QString portName, QByteArray data)
 {
-    LOGD(TAG) << portName;
     if (portName != mAppModel->currentPort()) return;
     mAppModel->setSerialData(data);
 }
