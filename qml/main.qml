@@ -2,26 +2,62 @@ import QtQuick 2.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
 
-Window {
+ApplicationWindow  {
     width: 640
     height: 480
     visible: true
     title: qsTr("SerialPort Reader")
 
-    Text {
-        width: parent.width
-        anchors.bottom: ctrl.top
-        anchors.top: parent.top
-        verticalAlignment: Text.AlignVCenter
-        horizontalAlignment: Text.AlignHCenter
-        text: APP_MODEL.serialData
-        padding: 2
+//    ScrollView {
+//        contentWidth: -1
+//        width: parent.width
+//        height: ctrl.y
+//        Text {
+//            width: parent.width
+//            height: ctrl.y
+//    //        verticalAlignment: Text.AlignVCenter
+//    //        horizontalAlignment: Text.AlignHCenter
+//            text: APP_MODEL.serialData
+//            wrapMode: Text.Wrap
+//            padding: 2
+//        }
+//    }
+
+    ListView {
+        id: contentList
+        width: parent.width - 10
+        height: ctrl.y - 10
+        anchors.horizontalCenter: parent.horizontalCenter
+        model: APP_MODEL.recordList
+        delegate: Item {
+            id: dlg
+            width: contentList.width
+            height: 20
+            Text {
+                anchors.fill: parent
+                text: dlg.visible? modelData.raw : ""
+            }
+            Rectangle{
+                width: parent.width
+                height: 1
+                color: "green"
+            }
+
+            onVisibleChanged: {
+                modelData.visible = visible
+            }
+
+            Component.onCompleted: {
+                modelData.visible = visible
+            }
+        }
+        ScrollBar.vertical: ScrollBar { }
     }
 
     Row {
         id: ctrl
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 50
+        anchors.bottomMargin: 10
         anchors.horizontalCenter: parent.horizontalCenter
         height: 50
         spacing: 50

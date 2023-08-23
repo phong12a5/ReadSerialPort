@@ -25,6 +25,7 @@ HEADERS += \
     appcontroller.h \
     appmodel.h \
     log.h \
+    model/datarecored.h \
     serial/portreader.h \
     serial/serialreader.h
 
@@ -33,10 +34,11 @@ SOURCES += \
         appmodel.cpp \
         log.cpp \
         main.cpp \
+        model/datarecored.cpp \
         serial/portreader.cpp \
         serial/serialreader.cpp
 
-INCLUDEPATH += serial
+INCLUDEPATH += serial model
 
 LIBS += -lws2_32 -lpsapi -ldbghelp -lwinmm
 

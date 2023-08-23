@@ -89,7 +89,7 @@ void PortReader::onStarted()
 
         qint64 benchmark = elapTime.nsecsElapsed();
 
-        LOGD(TAG) << (success? "Done" : "Failure") << " with benchmark:" << benchmark << "ns";
+//        LOGD(TAG) << (success? "Done" : "Failure") << " with benchmark:" << benchmark << "ns";
     }
 }
 

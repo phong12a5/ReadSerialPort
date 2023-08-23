@@ -41,7 +41,8 @@ void AppController::onPortReady()
 void AppController::onCurrentPortChanged(QString oldPort, QString newPort)
 {
     LOGD(TAG) << "oldPort:" << oldPort << ", newPort:" << newPort;
-    mAppModel->setSerialData("");
+    QString empty;
+    mAppModel->setSerialData(empty);
     SerialReader::instance()->stopReadPort(oldPort);
     SerialReader::instance()->startReadPort(mAppModel->currentPort(), mAppModel->baudRate());
 }
@@ -55,5 +56,7 @@ void AppController::onBaudRateChanged(int oldBaudRate, int newBaudRate)
 void AppController::onDataUpdated(QString portName, QByteArray data)
 {
     if (portName != mAppModel->currentPort()) return;
-    mAppModel->setSerialData(data);
+
+    QString hex = data.toHex();
+    mAppModel->setSerialData(hex);
 }

@@ -13,12 +13,11 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
 
     AppController* appCtrl = new AppController();
-    AppModel* appModel = new AppModel();
-    appCtrl->setModel(appModel);
+    appCtrl->setModel(AppModel::instance());
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("APP_CTRL", appCtrl);
-    engine.rootContext()->setContextProperty("APP_MODEL", appModel);
+    engine.rootContext()->setContextProperty("APP_MODEL", AppModel::instance());
 
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
