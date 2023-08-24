@@ -8,27 +8,18 @@ ApplicationWindow  {
     visible: true
     title: qsTr("SerialPort Reader")
 
-//    ScrollView {
-//        contentWidth: -1
-//        width: parent.width
-//        height: ctrl.y
-//        Text {
-//            width: parent.width
-//            height: ctrl.y
-//    //        verticalAlignment: Text.AlignVCenter
-//    //        horizontalAlignment: Text.AlignHCenter
-//            text: APP_MODEL.serialData
-//            wrapMode: Text.Wrap
-//            padding: 2
-//        }
-//    }
-
     ListView {
         id: contentList
-        width: parent.width - 10
-        height: ctrl.y - 10
-        anchors.horizontalCenter: parent.horizontalCenter
+        width: parent.width
+        anchors {
+            top: parent.top
+            topMargin: 5
+            bottom: ctrl.top
+            bottomMargin: 30
+        }
+
         model: APP_MODEL.recordList
+        interactive: false
         delegate: Item {
             id: dlg
             width: contentList.width
@@ -36,6 +27,8 @@ ApplicationWindow  {
             Text {
                 anchors.fill: parent
                 text: dlg.visible? modelData.raw : ""
+                padding: 5
+                elide: Text.ElideRight
             }
             Rectangle{
                 width: parent.width
@@ -51,7 +44,21 @@ ApplicationWindow  {
                 modelData.visible = visible
             }
         }
-        ScrollBar.vertical: ScrollBar { }
+
+        ScrollBar {
+            id: vbar
+            hoverEnabled: true
+            active: true//hovered || pressed
+            orientation: Qt.Vertical
+            size: APP_MODEL.dataSize <= 200? 1 : (200 / APP_MODEL.dataSize)
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            onPositionChanged: {
+                if (position === 1.0) APP_MODEL.pointerIndex = 0
+                else APP_MODEL.pointerIndex =  parseInt(APP_MODEL.dataSize * position, 10)
+            }
+        }
     }
 
     Row {
@@ -88,17 +95,5 @@ ApplicationWindow  {
                 APP_MODEL.baudRate = parseInt(currentValue);
             }
         }
-
-        /*
-        Button {
-            id: startStop
-            width: 100
-            height: 40
-            text: "Start"
-            onClicked: {
-                APP_CTRL.startReadPort(portsBox.currentValue)
-            }
-        }
-        */
     }
 }

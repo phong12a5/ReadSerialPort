@@ -18,8 +18,9 @@ uint DataRecored::index() const
 QString DataRecored::raw() const
 {
     QString data = "";
-    if(mIndex < AppModel::instance()->rawRecordList().size()) {
-        data = AppModel::instance()->rawRecordList().at(mIndex);
+    int targetIndex = mIndex + AppModel::instance()->pointerIndex();
+    if(targetIndex < AppModel::instance()->rawRecordList().size()) {
+        data = AppModel::instance()->rawRecordList().at(targetIndex);
     }
     return data;
 }

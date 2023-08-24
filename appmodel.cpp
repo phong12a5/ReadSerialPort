@@ -3,14 +3,18 @@
 #include <log.h>
 #include <model/datarecored.h>
 
+static constexpr const char* const TAG = "AppController";
+
 static AppModel* sInstance = nullptr;
 
 AppModel::AppModel(QObject *parent)
-    : QObject{parent}
+    : QObject{parent},
+    mDataSize(0),
+    mPointerIndex(0)
 {
     mRawRecordList.clear();
 
-    for (int i = 0; i < MAX_SIZE_RECORD_LIST; i++) {
+    for (int i = 0; i < RECORD_VIEW_LIST; i++) {
         mRecordList.append(new DataRecored(i, this));
     }
 }
@@ -77,17 +81,16 @@ void AppModel::setSerialData(QString& data)
 
     mRawRecordList.append(data);
 
-
     static QTimer* timer = nullptr;
     if(timer == nullptr) {
         timer = new QTimer(this);
         timer->setSingleShot(false);
-        timer->setInterval(1000); // 6 fps
+        timer->setInterval(1000);
         connect(timer, &QTimer::timeout, this, [this] () {
             emit recordListChanged();
             timer->start();
 
-            if (timer->interval() == 1000) timer->setInterval(DISPLAY_UPDATE_PERIOD);
+            if (timer->interval() == 1000) timer->setInterval(DISPLAY_UPDATE_PERIOD); // 6 fps
 
             for(int i = 0; i < mRecordList.size(); i++) {
                 DataRecored* record = static_cast<DataRecored*>(mRecordList.at(i));
@@ -95,8 +98,43 @@ void AppModel::setSerialData(QString& data)
                     emit record->rawChanged();
                 }
             }
+
+            setDataSize(mRawRecordList.size());
         });
         timer->start();
+    }
+}
+
+int AppModel::dataSize() const
+{
+    return mDataSize;
+}
+
+void AppModel::setDataSize(int size)
+{
+    if (size != mDataSize) {
+        mDataSize = size;
+        emit dataSizeChanged();
+    }
+}
+
+int AppModel::pointerIndex() const
+{
+    return mPointerIndex;
+}
+
+void AppModel::setPointerIndex(int idx)
+{
+    if (idx != mPointerIndex) {
+        mPointerIndex = idx;
+        emit pointerIndexChanged();
+
+        for(int i = 0; i < mRecordList.size(); i++) {
+            DataRecored* record = static_cast<DataRecored*>(mRecordList.at(i));
+            if (record->visible()) {
+                emit record->rawChanged();
+            }
+        }
     }
 }
 

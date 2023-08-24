@@ -58,5 +58,5 @@ void AppController::onDataUpdated(QString portName, QByteArray data)
     if (portName != mAppModel->currentPort()) return;
 
     QString hex = data.toHex();
-    mAppModel->setSerialData(hex);
+    if (!hex.isEmpty()) mAppModel->setSerialData(hex);
 }
