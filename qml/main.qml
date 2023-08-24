@@ -8,6 +8,8 @@ ApplicationWindow  {
     visible: true
     title: qsTr("SerialPort Reader")
 
+    property int record_dlg_height: 20
+
     ListView {
         id: contentList
         width: parent.width
@@ -23,7 +25,7 @@ ApplicationWindow  {
         delegate: Item {
             id: dlg
             width: contentList.width
-            height: 20
+            height: record_dlg_height
             Text {
                 anchors.fill: parent
                 text: dlg.visible? modelData.raw : ""
@@ -58,6 +60,10 @@ ApplicationWindow  {
                 if (position === 1.0) APP_MODEL.pointerIndex = 0
                 else APP_MODEL.pointerIndex =  parseInt(APP_MODEL.dataSize * position, 10)
             }
+        }
+
+        onHeightChanged: {
+            APP_MODEL.makeModel(height,record_dlg_height)
         }
     }
 

@@ -14,9 +14,9 @@ AppModel::AppModel(QObject *parent)
 {
     mRawRecordList.clear();
 
-    for (int i = 0; i < RECORD_VIEW_LIST; i++) {
-        mRecordList.append(new DataRecored(i, this));
-    }
+//    for (int i = 0; i < RECORD_VIEW_LIST; i++) {
+//        mRecordList.append(new DataRecored(i, this));
+//    }
 }
 
 AppModel *AppModel::instance() {
@@ -146,4 +146,21 @@ QList<QObject*> AppModel::recordList() const
 QStringList &AppModel::rawRecordList()
 {
     return mRawRecordList;
+}
+
+void AppModel::makeModel(int lstViewHeight, int dlgHeight)
+{
+    int modelSize = lstViewHeight/dlgHeight;
+    if (modelSize > mRecordList.size()) {
+        while(mRecordList.size() < modelSize) {
+            mRecordList.append(new DataRecored(mRecordList.size(), this));
+        }
+        emit recordListChanged();
+    } else {
+        while( mRecordList.size() && mRecordList.size() > modelSize) {
+            QObject* record = mRecordList.takeLast();
+            if (record) record->deleteLater();
+        }
+        emit recordListChanged();
+    }
 }

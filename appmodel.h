@@ -47,6 +47,8 @@ public:
     QList<QObject*> recordList() const;
     QStringList& rawRecordList();
 
+    Q_INVOKABLE void makeModel(int lstViewHeight, int dlgHeight);
+
 signals:
     void portListChanged();
     void currentPortChanged(QString,QString);
