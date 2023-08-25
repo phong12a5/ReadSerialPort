@@ -1,6 +1,9 @@
 #include "appcontroller.h"
 #include <appmodel.h>
 #include <log.h>
+#include <QFile>
+#include <QDir>
+#include <QDateTime>
 
 static constexpr const char* const TAG = "AppController";
 
@@ -59,4 +62,14 @@ void AppController::onDataUpdated(QString portName, QByteArray data)
 
     QString hex = data.toHex(' ');
     if (!hex.isEmpty()) mAppModel->setSerialData(hex);
+
+    QDateTime date = QDateTime::currentDateTime();
+    QString formattedTime = date.toString("dd.MM.yyyy_hh");
+
+    QFile file(QDir::currentPath() + "/" + formattedTime + ".txt");
+    if (file.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream out(&file);
+        out << hex.toUpper() << " ";
+        file.close();
+    }
 }
