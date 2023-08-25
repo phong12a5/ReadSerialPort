@@ -4,6 +4,7 @@
 #include <appmodel.h>
 #include <QQmlContext>
 #include <log.h>
+#include <appio.h>
 
 int main(int argc, char *argv[])
 {
@@ -14,6 +15,8 @@ int main(int argc, char *argv[])
 
     AppController* appCtrl = new AppController();
     appCtrl->setModel(AppModel::instance());
+
+    AppIO* appIO = new AppIO(&app);
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("APP_CTRL", appCtrl);

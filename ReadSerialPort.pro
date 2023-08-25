@@ -27,6 +27,7 @@ HEADERS += \
     log.h \
     model/datarecored.h \
     serial/portreader.h \
+    appio.h \
     serial/serialreader.h
 
 SOURCES += \
@@ -36,6 +37,7 @@ SOURCES += \
         main.cpp \
         model/datarecored.cpp \
         serial/portreader.cpp \
+        appio.cpp \
         serial/serialreader.cpp
 
 INCLUDEPATH += serial model

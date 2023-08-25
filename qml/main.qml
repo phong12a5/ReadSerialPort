@@ -47,6 +47,7 @@ ApplicationWindow  {
             }
         }
 
+
         ScrollBar {
             id: vbar
             hoverEnabled: true
@@ -60,6 +61,14 @@ ApplicationWindow  {
                 if (position === 1.0) APP_MODEL.pointerIndex = 0
                 else APP_MODEL.pointerIndex =  parseInt(APP_MODEL.dataSize * position, 10)
             }
+
+            Connections {
+                target: APP_MODEL
+                function onPointerIndexChanged() {
+                    vbar.position = APP_MODEL.pointerIndex/APP_MODEL.dataSize
+                }
+            }
+
         }
 
         onHeightChanged: {
