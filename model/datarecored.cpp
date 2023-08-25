@@ -22,7 +22,7 @@ QString DataRecored::raw() const
     if(targetIndex < AppModel::instance()->rawRecordList().size()) {
         data = AppModel::instance()->rawRecordList().at(targetIndex);
     }
-    return data;
+    return data.toUpper();
 }
 
 bool DataRecored::visible() const

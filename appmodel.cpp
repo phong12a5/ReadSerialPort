@@ -14,9 +14,9 @@ AppModel::AppModel(QObject *parent)
 {
     mRawRecordList.clear();
 
-//    for (int i = 0; i < RECORD_VIEW_LIST; i++) {
-//        mRecordList.append(new DataRecored(i, this));
-//    }
+    //    for (int i = 0; i < RECORD_VIEW_LIST; i++) {
+    //        mRecordList.append(new DataRecored(i, this));
+    //    }
 }
 
 AppModel *AppModel::instance() {
@@ -79,7 +79,27 @@ void AppModel::setSerialData(QString& data)
         mRawRecordList.removeFirst();
     }
 
-    mRawRecordList.append(data);
+    // split packets
+    const QString partern = "fa ff ";
+    bool startByNewPacket = data.startsWith(partern);
+    QStringList packets = data.split(partern);
+
+    for(int i = 0; i < packets.size(); i++) {
+        if(packets[i].isEmpty()) continue;
+
+        if(i == 0 && !startByNewPacket) {
+            if(mRawRecordList.empty()) {
+                mRawRecordList.append(packets[i]);
+            } else {
+                // concat to last itemt
+                QString lastRecord = mRawRecordList.last();
+                mRawRecordList[mRawRecordList.size() - 1] = lastRecord + packets[i];
+            }
+        } else {
+            mRawRecordList.append(partern +  packets[i]);
+        }
+    }
+
 
     static QTimer* timer = nullptr;
     if(timer == nullptr) {

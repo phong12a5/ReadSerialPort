@@ -18,12 +18,19 @@ PortReader::PortReader(QString port, int baudRate)
     LOGD(TAG) << "port:" << port << ", baudRate:" << baudRate;
     mSerial.setPortName(port);
     mSerial.setBaudRate(baudRate);
-    mSerial.setDataBits(QSerialPort::Data7);
-    mSerial.setParity(QSerialPort::EvenParity);
+    mSerial.setDataBits(QSerialPort::Data8);
+    mSerial.setParity(QSerialPort::NoParity);
     mSerial.setFlowControl(QSerialPort::HardwareControl);
     mSerial.setStopBits(QSerialPort::OneStop);
     mSerial.open(QIODevice::ReadOnly);
-    if (mSerial.isOpen())  mSerial.clear(QSerialPort::Input);}
+    if (mSerial.isOpen())  mSerial.clear(QSerialPort::Input);
+
+    QObject::connect(&mSerial, &QSerialPort::readyRead, [&]
+                     {
+                         QByteArray datas = mSerial.readAll();
+                         emit sigDataReady(mPort, datas);
+                     });
+}
 
 PortReader::~PortReader()
 {
@@ -67,30 +74,34 @@ void PortReader::setBaudRate(int baudRate)
 
 void PortReader::onStarted()
 {
-    mRunningLock.lock();
-    mIsRunning = true;
-    mRunningLock.unlock();
+    LOGD(TAG);
+    /*
+        mRunningLock.lock();
+        mIsRunning = true;
+        mRunningLock.unlock();
 
-    static QElapsedTimer elapTime;
+        static QElapsedTimer elapTime;
 
-    while (true) {
-        elapTime.restart();
-        if (!mIsRunning) {
-            break;
+        while (true) {
+            elapTime.restart();
+            if (!mIsRunning) {
+                mSerial.close();
+                break;
+            }
+
+            bool timeout = false;
+            bool success = onReadData(&timeout);
+            qint64 endTime = elapTime.nsecsElapsed();
+
+            if (!timeout && endTime < READ_DATA_PERIOD) {
+                while(elapTime.nsecsElapsed() < READ_DATA_PERIOD);
+            }
+
+            qint64 benchmark = elapTime.nsecsElapsed();
+
+            LOGD(TAG) << (success? "Done" : "Failure") << " with benchmark:" << benchmark << "ns";
         }
-
-        bool timeout = false;
-        bool success = onReadData(&timeout);
-        qint64 endTime = elapTime.nsecsElapsed();
-
-        if (!timeout && endTime < READ_DATA_PERIOD) {
-            while(elapTime.nsecsElapsed() < READ_DATA_PERIOD);
-        }
-
-        qint64 benchmark = elapTime.nsecsElapsed();
-
-//        LOGD(TAG) << (success? "Done" : "Failure") << " with benchmark:" << benchmark << "ns";
-    }
+    */
 }
 
 bool PortReader::onReadData(bool* timeout)
@@ -104,23 +115,27 @@ bool PortReader::onReadData(bool* timeout)
         }
     }
 
-    if (mSerial.baudRate() != mBaudRate) {
-        LOGD(TAG) << "update baud date";
-        mSerial.setBaudRate(mBaudRate);
-        mSerial.clear(QSerialPort::AllDirections);
+    if (!mSerial.isReadable()) {
+        LOGD(TAG) << "cannot read device!";
+        return false;
     }
 
-    if (!mSerial.isReadable()) {
+    if (mSerial.baudRate() != mBaudRate) {
+        LOGD(TAG) << "update baud date";
         LOGD(TAG) << "port: " << mPort << "is not ready for reading";
         return false;
     }
 
-    int bufferSize = 100;
+    //    int bufferSize = 100;
     int numRead = 0;
-    char buffer[bufferSize];
 
+    LOGD(TAG) << "wait";
     if(mSerial.waitForReadyRead(1)) {
-        numRead  = mSerial.read(buffer, bufferSize);
+        int availNum = mSerial.bytesAvailable();
+        char buffer[availNum];
+        LOGD(TAG) << "read all";
+        numRead =  mSerial.read(buffer, availNum);
+        LOGD(TAG) << "buffer: " <<QByteArray(buffer).toHex(' ');
         bool succes = false;
         if (numRead > 0) {
             emit sigDataReady(mPort, buffer);
