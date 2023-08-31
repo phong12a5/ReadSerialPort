@@ -8,6 +8,8 @@
 
 #define DISPLAY_UPDATE_PERIOD 20000 //ms
 
+class RecordsTabelModel;
+
 class AppModel : public QObject
 {
     Q_OBJECT
@@ -17,8 +19,10 @@ class AppModel : public QObject
     Q_PROPERTY(int baudRate READ baudRate WRITE setBaudRate NOTIFY baudRateChanged)
     Q_PROPERTY(QString serialData READ serialData NOTIFY serialDataChanged)
     Q_PROPERTY(QList<QObject*> recordList READ recordList NOTIFY recordListChanged FINAL)
+    Q_PROPERTY(QObject* tableModel READ tableModel NOTIFY tableModelChanged)
     Q_PROPERTY(int dataSize READ dataSize WRITE setDataSize NOTIFY dataSizeChanged FINAL)
     Q_PROPERTY(int pointerIndex READ pointerIndex WRITE setPointerIndex NOTIFY pointerIndexChanged FINAL)
+    Q_PROPERTY(int pointerIndexForTable READ pointerIndexForTable WRITE setPointerIndexForTable NOTIFY pointerIndexForTableChanged)
 
 private:
     explicit AppModel(QObject *parent = nullptr);
@@ -44,10 +48,15 @@ public:
     int pointerIndex() const;
     void setPointerIndex(int);
 
+    int pointerIndexForTable() const;
+    void setPointerIndexForTable(int);
+
+    QObject* tableModel() const;
     QList<QObject*> recordList() const;
     QStringList& rawRecordList();
 
-    Q_INVOKABLE void makeModel(int lstViewHeight, int dlgHeight);
+    Q_INVOKABLE void makeTableModel(int tableHeight, int rowHeight);
+    Q_INVOKABLE void makeRecordsModel(int lstViewHeight, int dlgHeight);
 
 signals:
     void portListChanged();
@@ -55,8 +64,10 @@ signals:
     void baudRateChanged(int,int);
     void serialDataChanged();
     void recordListChanged();
+    void tableModelChanged();
     void dataSizeChanged();
     void pointerIndexChanged();
+    void pointerIndexForTableChanged();
 
 private:
     QStringList mPortList;
@@ -65,7 +76,9 @@ private:
     QString mSerialData;
     int mDataSize;
     int mPointerIndex;
+    int mPointerIndexForTable;
     QList<QObject*> mRecordList;
+    RecordsTabelModel* mTableModel;
     QStringList mRawRecordList;
 };
 

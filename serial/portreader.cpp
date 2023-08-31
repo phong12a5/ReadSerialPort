@@ -1,12 +1,11 @@
 #include "portreader.h"
 #include <log.h>
 #include <QSerialPortInfo>
-#include<windows.h>
 #include <chrono>
 #include <thread>
 #include <QElapsedTimer>
 #include <inttypes.h>
-
+#include <QTimer>
 
 static constexpr const char* const TAG = "PortReader";
 
@@ -75,6 +74,19 @@ void PortReader::setBaudRate(int baudRate)
 void PortReader::onStarted()
 {
     LOGD(TAG);
+
+#if 0
+    QTimer* timer = new QTimer();
+    timer->setInterval(100);
+
+    QObject::connect(timer, &QTimer::timeout, [&]
+                     {
+                         QByteArray raw = QString("FAFF361B102002002A1060040000172A80400C3BDFFE00BC08D5003B20C800FF").toLower().toUtf8();
+                         emit sigDataReady(mPort,  QByteArray::fromHex(raw));
+                     });
+    timer->start();
+#endif
+
     /*
         mRunningLock.lock();
         mIsRunning = true;

@@ -2,6 +2,8 @@
 #include <QTimer>
 #include <log.h>
 #include <model/datarecored.h>
+#include <model/tabledatarecored.h>
+#include <model/recordstabelmodel.h>
 
 static constexpr const char* const TAG = "AppController";
 
@@ -10,13 +12,11 @@ static AppModel* sInstance = nullptr;
 AppModel::AppModel(QObject *parent)
     : QObject{parent},
     mDataSize(0),
-    mPointerIndex(0)
+    mPointerIndex(0),
+    mPointerIndexForTable(0)
 {
     mRawRecordList.clear();
-
-    //    for (int i = 0; i < RECORD_VIEW_LIST; i++) {
-    //        mRecordList.append(new DataRecored(i, this));
-    //    }
+    mTableModel = new RecordsTabelModel(this);
 }
 
 AppModel *AppModel::instance() {
@@ -80,7 +80,7 @@ void AppModel::setSerialData(QString& data)
     }
 
     // split packets
-    const QString partern = "fa ff ";
+    const QString partern = "FAFF";
     bool startByNewPacket = data.startsWith(partern);
     QStringList packets = data.split(partern);
 
@@ -107,6 +107,7 @@ void AppModel::setSerialData(QString& data)
         timer->setSingleShot(false);
         timer->setInterval(1000);
         connect(timer, &QTimer::timeout, this, [this] () {
+
             emit recordListChanged();
             timer->start();
 
@@ -118,6 +119,8 @@ void AppModel::setSerialData(QString& data)
                     emit record->rawChanged();
                 }
             }
+
+            mTableModel->refreshModel();
 
             setDataSize(mRawRecordList.size());
         });
@@ -158,6 +161,26 @@ void AppModel::setPointerIndex(int idx)
     }
 }
 
+int AppModel::pointerIndexForTable() const
+{
+    return mPointerIndexForTable;
+}
+
+void AppModel::setPointerIndexForTable(int data)
+{
+    if (data != mPointerIndexForTable) {
+        mPointerIndexForTable = data;
+        emit pointerIndexChanged();
+
+        mTableModel->refreshModel();
+    }
+}
+
+QObject * AppModel::tableModel() const
+{
+    return (QObject *)mTableModel;
+}
+
 QList<QObject*> AppModel::recordList() const
 {
     return mRecordList;
@@ -168,7 +191,13 @@ QStringList &AppModel::rawRecordList()
     return mRawRecordList;
 }
 
-void AppModel::makeModel(int lstViewHeight, int dlgHeight)
+void AppModel::makeTableModel(int tableHeight, int rowHeight)
+{
+    mTableModel->makeModelItem(tableHeight, rowHeight);
+}
+
+
+void AppModel::makeRecordsModel(int lstViewHeight, int dlgHeight)
 {
     int modelSize = lstViewHeight/dlgHeight;
     if (modelSize > mRecordList.size()) {

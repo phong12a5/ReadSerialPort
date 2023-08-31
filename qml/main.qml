@@ -1,21 +1,91 @@
 import QtQuick 2.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
+import Qt.labs.qmlmodels 1.0
 
 ApplicationWindow  {
-    width: 640
+    width: 1280
     height: 480
     visible: true
     title: qsTr("SerialPort Reader")
 
+    property int table_row_height: 40
     property int record_dlg_height: 20
 
-    ListView {
-        id: contentList
-        width: parent.width
+    TableView {
+        id: tableView
+        width: parent.width/2
         anchors {
             top: parent.top
             topMargin: 5
+            left: parent.left
+            bottom: ctrl.top
+            bottomMargin: 30
+        }
+        columnSpacing: 1
+        rowSpacing: 1
+        boundsBehavior: Flickable.StopAtBounds
+        clip: true
+
+        model: APP_MODEL.tableModel
+
+        delegate:  TextInput {
+                    text: String(model.display)
+                    padding: 12
+                    selectByMouse: true
+                    onAccepted: model.display = text
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "#efefef"
+                        z: -1
+                    }
+                    onWidthChanged: {
+
+                    }
+                }
+
+        onHeightChanged: {
+            APP_MODEL.makeTableModel(height,table_row_height)
+        }
+
+        ScrollBar {
+            id: vbarForTable
+            hoverEnabled: true
+            active: true//hovered || pressed
+            orientation: Qt.Vertical
+            size: APP_MODEL.dataSize <= 200? 1 : (200 / APP_MODEL.dataSize)
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            onPositionChanged: {
+                if (position === 1.0) APP_MODEL.pointerIndexForTable = 0
+                else APP_MODEL.pointerIndexForTable =  parseInt(APP_MODEL.dataSize * position, 10)
+            }
+
+            Connections {
+                target: APP_MODEL
+                function onPointerIndexChanged() {
+                    vbar.position = APP_MODEL.pointerIndexForTable/APP_MODEL.dataSize
+                }
+            }
+
+        }
+    }
+
+    HorizontalHeaderView {
+        id: verticalHeader
+        syncView: tableView
+        anchors.left: tableView.left
+        clip: true
+    }
+
+    ListView {
+        id: contentList
+        width: parent.width/2
+        anchors {
+            top: parent.top
+            topMargin: 5
+            right: parent.right
             bottom: ctrl.top
             bottomMargin: 30
         }
@@ -72,7 +142,7 @@ ApplicationWindow  {
         }
 
         onHeightChanged: {
-            APP_MODEL.makeModel(height,record_dlg_height)
+            APP_MODEL.makeRecordsModel(height,record_dlg_height)
         }
     }
 
