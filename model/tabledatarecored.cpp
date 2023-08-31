@@ -33,6 +33,5 @@ bool TableDataRecored::format()
     mAZ = mPackageData.mid(54, 8).toFloat();
     mCheckSum = mPackageData.mid(62, 2).toUInt(nullptr, 16);
     mSizeOfSensor = mPackageData.mid(36,2).toUInt(nullptr, 16);
-    LOGD(TAG) << mPackageData;
     return true;
 }

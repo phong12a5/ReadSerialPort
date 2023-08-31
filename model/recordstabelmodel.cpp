@@ -105,7 +105,7 @@ QVariant RecordsTabelModel::headerData(int section, Qt::Orientation orientation,
 void RecordsTabelModel::makeModelItem(int tableHeight, int rowHeight)
 {
     beginResetModel();
-    int modelSize = tableHeight/rowHeight;
+    int modelSize = tableHeight/rowHeight + 1;
     if (modelSize > mItems.size()) {
         while(mItems.size() < modelSize) {
             mItems.append(new TableDataRecored(mItems.size()));

@@ -47,29 +47,29 @@ ApplicationWindow  {
         onHeightChanged: {
             APP_MODEL.makeTableModel(height,table_row_height)
         }
+    }
 
-        ScrollBar {
-            id: vbarForTable
-            hoverEnabled: true
-            active: true//hovered || pressed
-            orientation: Qt.Vertical
-            size: APP_MODEL.dataSize <= 200? 1 : (200 / APP_MODEL.dataSize)
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            onPositionChanged: {
-                if (position === 1.0) APP_MODEL.pointerIndexForTable = 0
-                else APP_MODEL.pointerIndexForTable =  parseInt(APP_MODEL.dataSize * position, 10)
-            }
-
-            Connections {
-                target: APP_MODEL
-                function onPointerIndexChanged() {
-                    vbar.position = APP_MODEL.pointerIndexForTable/APP_MODEL.dataSize
-                }
-            }
-
+    ScrollBar {
+        id: vbarForTable
+        hoverEnabled: true
+        active: true//hovered || pressed
+        orientation: Qt.Vertical
+        size: APP_MODEL.dataSize <= 200? 1 : (200 / APP_MODEL.dataSize)
+        anchors.top: tableView.top
+        anchors.right: tableView.right
+        anchors.bottom: tableView.bottom
+        onPositionChanged: {
+            if (position === 1.0) APP_MODEL.pointerIndexForTable = 0
+            else APP_MODEL.pointerIndexForTable =  parseInt(APP_MODEL.dataSize * position, 10)
         }
+
+        Connections {
+            target: APP_MODEL
+            function onPointerIndexChanged() {
+                vbar.position = APP_MODEL.pointerIndexForTable/APP_MODEL.dataSize
+            }
+        }
+
     }
 
     HorizontalHeaderView {

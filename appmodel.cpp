@@ -170,7 +170,7 @@ void AppModel::setPointerIndexForTable(int data)
 {
     if (data != mPointerIndexForTable) {
         mPointerIndexForTable = data;
-        emit pointerIndexChanged();
+        emit pointerIndexForTableChanged();
 
         mTableModel->refreshModel();
     }

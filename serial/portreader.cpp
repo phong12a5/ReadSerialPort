@@ -6,6 +6,7 @@
 #include <QElapsedTimer>
 #include <inttypes.h>
 #include <QTimer>
+#include <QRandomGenerator64>
 
 static constexpr const char* const TAG = "PortReader";
 
@@ -81,7 +82,9 @@ void PortReader::onStarted()
 
     QObject::connect(timer, &QTimer::timeout, [&]
                      {
-                         QByteArray raw = QString("FAFF361B102002002A1060040000172A80400C3BDFFE00BC08D5003B20C800FF").toLower().toUtf8();
+                         QString str = "FAFF361B102002002A1060040000172A80400C3BDFFE00BC08D5003B20C800FF";
+                         str = str.replace("2002", "200" + QString::number(QRandomGenerator64::global()->bounded(10)));
+                         QByteArray raw = str.toLower().toUtf8();
                          emit sigDataReady(mPort,  QByteArray::fromHex(raw));
                      });
     timer->start();
